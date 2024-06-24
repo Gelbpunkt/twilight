@@ -23,7 +23,7 @@
 //! [`InMemoryCache`]: crate::InMemoryCache
 
 use crate::model::member::ComputedInteractionMember;
-use std::fmt::Debug;
+use std::{fmt::Debug, mem};
 use twilight_model::{
     application::interaction::InteractionMember,
     channel::{
@@ -157,8 +157,8 @@ pub trait CacheableChannel:
     #[cfg(feature = "permission-calculator")]
     fn permission_overwrites(&self) -> Option<&[PermissionOverwrite]>;
 
-    /// Set the last pin timestamp to a new timestamp.
-    fn set_last_pin_timestamp(&mut self, timestamp: Option<Timestamp>);
+    /// Set the last pin timestamp to a new timestamp and return the old one.
+    fn set_last_pin_timestamp(&mut self, timestamp: Option<Timestamp>) -> Option<Timestamp>;
 }
 
 impl CacheableChannel for Channel {
@@ -184,8 +184,8 @@ impl CacheableChannel for Channel {
         self.permission_overwrites.as_deref()
     }
 
-    fn set_last_pin_timestamp(&mut self, timestamp: Option<Timestamp>) {
-        self.last_pin_timestamp = timestamp;
+    fn set_last_pin_timestamp(&mut self, timestamp: Option<Timestamp>) -> Option<Timestamp> {
+        mem::replace(&mut self.last_pin_timestamp, timestamp)
     }
 }
 

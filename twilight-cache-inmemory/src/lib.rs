@@ -398,8 +398,11 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
     }
 
     /// Update the cache with an event from the gateway.
-    pub fn update(&self, value: &impl UpdateCache<CacheModels>) {
-        value.update(self);
+    pub fn update<V>(&self, value: &V) -> UpdateResult<V::Previous>
+    where
+        V: UpdateCache<CacheModels>,
+    {
+        value.update(self)
     }
 
     /// Gets the current user.
@@ -829,6 +832,30 @@ impl<CacheModels: CacheableModels> Default for InMemoryCache<CacheModels> {
     }
 }
 
+/// Result of a cache update.
+#[derive(Debug)]
+pub enum UpdateResult<T> {
+    /// The event was ignored.
+    Ignored,
+    /// The event was processed, and a previous value was returned.
+    Processed(T),
+}
+
+impl<T> UpdateResult<T> {
+    /// Whether the update was ignored.
+    pub fn is_ignored(&self) -> bool {
+        match self {
+            Self::Ignored => true,
+            Self::Processed(_) => false,
+        }
+    }
+
+    /// Whether the update was processed.
+    pub fn is_processed(&self) -> bool {
+        !self.is_ignored()
+    }
+}
+
 mod private {
     use twilight_model::gateway::{
         event::Event,
@@ -893,10 +920,11 @@ mod private {
 ///
 /// This trait is sealed and cannot be implemented.
 pub trait UpdateCache<CacheModels: CacheableModels>: private::Sealed {
+    /// Generic type for information about the data before the update.
+    type Previous;
+
     /// Updates the cache based on data contained within an event.
-    // Allow this for presentation purposes in documentation.
-    #[allow(unused_variables, clippy::type_complexity)]
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {}
+    fn update(&self, cache: &InMemoryCache<CacheModels>) -> UpdateResult<Self::Previous>;
 }
 
 /// Iterator over a voice channel's list of voice states.
@@ -924,10 +952,14 @@ impl<'a, CachedVoiceState> Iterator for VoiceChannelStates<'a, CachedVoiceState>
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for Event {
+    // We can't define a concrete type here. If users want access to the
+    // previous value, they should call the method on the individual event.
+    type Previous = ();
+
     // clippy: using `.deref()` is cleaner
     #[allow(clippy::explicit_deref_methods)]
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
-        match self {
+    fn update(&self, cache: &InMemoryCache<CacheModels>) -> UpdateResult<Self::Previous> {
+        let result = match self {
             Event::ChannelCreate(v) => cache.update(v.deref()),
             Event::ChannelDelete(v) => cache.update(v.deref()),
             Event::ChannelPinsUpdate(v) => cache.update(v),
@@ -1000,6 +1032,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for Event {
             | Event::TypingStart(_)
             | Event::VoiceServerUpdate(_)
             | Event::WebhooksUpdate(_) => {}
+        };
+
+        if result.is_ignored() {
+            UpdateResult::Ignored
+        } else {
+            UpdateResult::Processed(())
         }
     }
 }
