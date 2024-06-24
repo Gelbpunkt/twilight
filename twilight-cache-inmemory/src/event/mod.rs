@@ -64,7 +64,7 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for Ready {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if cache.wants(ResourceType::USER_CURRENT) {
             cache.cache_current_user(self.user.clone());
         }
@@ -78,7 +78,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for Ready {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for UnavailableGuild {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if cache.wants(ResourceType::GUILD) {
             cache.unavailable_guild(self.id);
         }
@@ -86,12 +86,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for UnavailableGuild
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for UserUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::USER_CURRENT) {
             return;
         }
 
-        cache.cache_current_user(self.0.clone());
+        cache.cache_current_user(self.0);
     }
 }
 

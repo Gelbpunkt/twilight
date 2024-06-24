@@ -42,17 +42,17 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildScheduledEventCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::GUILD_SCHEDULED_EVENT) {
             return;
         }
 
-        cache.cache_guild_scheduled_event(self.guild_id, self.0.clone());
+        cache.cache_guild_scheduled_event(self.guild_id, self.0);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildScheduledEventDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::GUILD_SCHEDULED_EVENT) {
             return;
         }
@@ -66,17 +66,17 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildScheduledEv
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildScheduledEventUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::GUILD_SCHEDULED_EVENT) {
             return;
         }
 
-        cache.cache_guild_scheduled_event(self.guild_id, self.0.clone());
+        cache.cache_guild_scheduled_event(self.guild_id, self.0);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildScheduledEventUserAdd {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         cache
             .scheduled_events
             .entry(self.guild_scheduled_event_id)
@@ -89,7 +89,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildScheduledEv
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildScheduledEventUserRemove {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         cache
             .scheduled_events
             .entry(self.guild_scheduled_event_id)
@@ -119,7 +119,7 @@ mod tests {
         let guild_id = Id::new(2);
         let user_id = Id::new(3);
 
-        cache.update(&GuildScheduledEventCreate(test::guild_scheduled_event(
+        cache.update(GuildScheduledEventCreate(test::guild_scheduled_event(
             id,
             guild_id,
             Some(41),
@@ -135,7 +135,7 @@ mod tests {
             cache.scheduled_events.get(&id).unwrap().user_count.unwrap()
         );
 
-        cache.update(&GuildScheduledEventUserAdd {
+        cache.update(GuildScheduledEventUserAdd {
             guild_id,
             guild_scheduled_event_id: id,
             user_id,
@@ -146,7 +146,7 @@ mod tests {
             cache.scheduled_events.get(&id).unwrap().user_count.unwrap()
         );
 
-        cache.update(&GuildScheduledEventUserRemove {
+        cache.update(GuildScheduledEventUserRemove {
             guild_id,
             guild_scheduled_event_id: id,
             user_id,

@@ -5,32 +5,33 @@ use twilight_model::{
 };
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for InteractionCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(mut self, cache: &InMemoryCache<CacheModels>) {
         // Cache interaction member
         if cache.wants(ResourceType::MEMBER) {
-            if let (Some(member), Some(guild_id)) = (&self.member, self.guild_id) {
-                if let Some(user) = &member.user {
-                    cache.cache_user(Cow::Borrowed(user), self.guild_id);
+            if let (Some(mut member), Some(guild_id)) = (self.member.take(), self.guild_id) {
+                if let Some(user) = member.user.take() {
+                    let user_id = user.id;
+                    cache.cache_user(Cow::Owned(user), self.guild_id);
 
-                    cache.cache_borrowed_partial_member(guild_id, member, user.id);
+                    cache.cache_partial_member(guild_id, member, user_id);
                 }
             }
         }
 
         // Cache interaction user
         if cache.wants(ResourceType::USER) {
-            if let Some(user) = &self.user {
-                cache.cache_user(Cow::Borrowed(user), None);
+            if let Some(user) = self.user.take() {
+                cache.cache_user(Cow::Owned(user), None);
             }
         }
 
         // Cache resolved interaction data
-        if let Some(InteractionData::ApplicationCommand(data)) = &self.data {
-            if let Some(resolved) = &data.resolved {
+        if let Some(InteractionData::ApplicationCommand(data)) = self.data.take() {
+            if let Some(mut resolved) = data.resolved {
                 // Cache resolved users and members
-                for u in resolved.users.values() {
+                for (user_id, u) in resolved.users.drain() {
                     if cache.wants(ResourceType::USER) {
-                        cache.cache_user(Cow::Borrowed(u), self.guild_id);
+                        cache.cache_user(Cow::Owned(u), self.guild_id);
                     }
 
                     if !cache.wants(ResourceType::MEMBER) || self.guild_id.is_none() {
@@ -39,9 +40,9 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for InteractionCreat
 
                     // This should always match, because resolved members
                     // are guaranteed to have a matching resolved user
-                    if let Some(member) = &resolved.members.get(&u.id) {
+                    if let Some(member) = resolved.members.remove(&user_id) {
                         if let Some(guild_id) = self.guild_id {
-                            cache.cache_borrowed_interaction_member(guild_id, member, u.id);
+                            cache.cache_interaction_member(guild_id, member, user_id);
                         }
                     }
                 }
@@ -49,7 +50,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for InteractionCreat
                 // Cache resolved roles
                 if cache.wants(ResourceType::ROLE) {
                     if let Some(guild_id) = self.guild_id {
-                        cache.cache_roles(guild_id, resolved.roles.values().cloned());
+                        cache.cache_roles(guild_id, resolved.roles.into_values());
                     }
                 }
             }
@@ -95,7 +96,7 @@ mod tests {
 
         let cache = DefaultInMemoryCache::new();
 
-        cache.update(&InteractionCreate(Interaction {
+        cache.update(InteractionCreate(Interaction {
             app_permissions: Some(Permissions::SEND_MESSAGES),
             application_id: Id::new(1),
             authorizing_integration_owners: ApplicationIntegrationMap {

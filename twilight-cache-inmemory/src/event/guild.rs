@@ -143,9 +143,9 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         match self {
-            GuildCreate::Available(g) => cache.cache_guild(g.clone()),
+            GuildCreate::Available(g) => cache.cache_guild(g),
             GuildCreate::Unavailable(g) => {
                 cache.unavailable_guild(g.id);
             }
@@ -154,13 +154,13 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildCreate {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         cache.delete_guild(self.id, false);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::GUILD) {
             return;
         }
@@ -365,7 +365,7 @@ mod tests {
         let cache = DefaultInMemoryCache::new();
         let guild = test::guild(Id::new(1), None);
 
-        cache.update(&GuildCreate::Unavailable(
+        cache.update(GuildCreate::Unavailable(
             twilight_model::guild::UnavailableGuild {
                 id: guild.id,
                 unavailable: true,
@@ -373,11 +373,11 @@ mod tests {
         ));
         assert!(cache.unavailable_guilds.get(&guild.id).is_some());
 
-        cache.update(&GuildCreate::Available(guild.clone()));
+        cache.update(GuildCreate::Available(guild.clone()));
         assert_eq!(*cache.guilds.get(&guild.id).unwrap(), guild);
         assert!(cache.unavailable_guilds.get(&guild.id).is_none());
 
-        cache.update(&GuildCreate::Unavailable(
+        cache.update(GuildCreate::Unavailable(
             twilight_model::guild::UnavailableGuild {
                 id: guild.id,
                 unavailable: true,
@@ -386,7 +386,7 @@ mod tests {
         assert!(cache.unavailable_guilds.get(&guild.id).is_some());
         assert!(cache.guilds.get(&guild.id).unwrap().unavailable.unwrap());
 
-        cache.update(&GuildCreate::Available(guild.clone()));
+        cache.update(GuildCreate::Available(guild.clone()));
         assert!(!cache
             .guilds
             .get(&guild.id)
@@ -401,7 +401,7 @@ mod tests {
         let cache = DefaultInMemoryCache::new();
         let guild = test::guild(Id::new(1), None);
 
-        cache.update(&GuildCreate::Available(guild.clone()));
+        cache.update(GuildCreate::Available(guild.clone()));
 
         let mutation = PartialGuild {
             id: guild.id,
@@ -441,7 +441,7 @@ mod tests {
             widget_enabled: guild.widget_enabled,
         };
 
-        cache.update(&GuildUpdate(mutation.clone()));
+        cache.update(GuildUpdate(mutation.clone()));
 
         assert_eq!(cache.guild(guild.id).unwrap().name, mutation.name);
         assert_eq!(cache.guild(guild.id).unwrap().owner_id, mutation.owner_id);
@@ -457,12 +457,12 @@ mod tests {
         let member = test::member(user_id);
         let guild = test::guild(guild_id, Some(1));
 
-        cache.update(&GuildCreate::Available(guild));
-        cache.update(&MemberAdd { guild_id, member });
+        cache.update(GuildCreate::Available(guild));
+        cache.update(MemberAdd { guild_id, member });
 
         assert_eq!(cache.guild(guild_id).unwrap().member_count, Some(2));
 
-        cache.update(&MemberRemove { guild_id, user });
+        cache.update(MemberRemove { guild_id, user });
 
         assert_eq!(cache.guild(guild_id).unwrap().member_count, Some(1));
     }
@@ -476,7 +476,7 @@ mod tests {
         let mut guild = test::guild(guild_id, Some(1));
         guild.members.push(member);
 
-        cache.update(&GuildCreate::Available(guild.clone()));
+        cache.update(GuildCreate::Available(guild.clone()));
 
         assert_eq!(
             1,
@@ -486,7 +486,7 @@ mod tests {
                 .unwrap_or_default()
         );
 
-        cache.update(&UnavailableGuild { id: guild_id });
+        cache.update(UnavailableGuild { id: guild_id });
 
         assert_eq!(
             0,
@@ -497,7 +497,7 @@ mod tests {
         );
         assert!(cache.guild(guild_id).unwrap().unavailable.unwrap());
 
-        cache.update(&GuildCreate::Available(guild));
+        cache.update(GuildCreate::Available(guild));
 
         assert_eq!(
             1,

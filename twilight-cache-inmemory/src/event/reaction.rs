@@ -11,7 +11,7 @@ use twilight_model::{
 };
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionAdd {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::REACTION) {
             return;
         }
@@ -48,7 +48,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionAdd {
                     burst: 0,
                     normal: 1,
                 },
-                emoji: self.0.emoji.clone(),
+                emoji: self.0.emoji,
                 me,
                 me_burst: false,
             });
@@ -57,7 +57,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionAdd {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionRemove {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::REACTION) {
             return;
         }
@@ -89,7 +89,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionRemove {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionRemoveAll {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::REACTION) {
             return;
         }
@@ -103,7 +103,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionRemoveAl
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ReactionRemoveEmoji {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::REACTION) {
             return;
         }
@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn reaction_remove() {
         let cache = test::cache_with_message_and_reactions();
-        cache.update(&ReactionRemove(GatewayReaction {
+        cache.update(ReactionRemove(GatewayReaction {
             burst: false,
             burst_colors: Vec::new(),
             channel_id: Id::new(2),
@@ -204,7 +204,7 @@ mod tests {
             message_id: Id::new(4),
             user_id: Id::new(5),
         }));
-        cache.update(&ReactionRemove(GatewayReaction {
+        cache.update(ReactionRemove(GatewayReaction {
             burst: false,
             burst_colors: Vec::new(),
             channel_id: Id::new(2),
@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn reaction_remove_all() {
         let cache = test::cache_with_message_and_reactions();
-        cache.update(&ReactionRemoveAll {
+        cache.update(ReactionRemoveAll {
             channel_id: Id::new(2),
             message_id: Id::new(4),
             guild_id: Some(Id::new(1)),
@@ -258,7 +258,7 @@ mod tests {
     #[test]
     fn reaction_remove_emoji() {
         let cache = test::cache_with_message_and_reactions();
-        cache.update(&ReactionRemoveEmoji {
+        cache.update(ReactionRemoveEmoji {
             channel_id: Id::new(2),
             emoji: EmojiReactionType::Unicode {
                 name: "😀".to_owned(),
@@ -266,7 +266,7 @@ mod tests {
             guild_id: Id::new(1),
             message_id: Id::new(4),
         });
-        cache.update(&ReactionRemoveEmoji {
+        cache.update(ReactionRemoveEmoji {
             channel_id: Id::new(2),
             emoji: EmojiReactionType::Custom {
                 animated: false,

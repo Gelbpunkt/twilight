@@ -42,17 +42,17 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ChannelCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
 
-        cache.cache_channel(self.0.clone());
+        cache.cache_channel(self.0);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ChannelDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
@@ -62,7 +62,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ChannelDelete {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ChannelPinsUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
@@ -74,12 +74,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ChannelPinsUpdat
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ChannelUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
 
-        cache.cache_channel(self.0.clone());
+        cache.cache_channel(self.0);
     }
 }
 
@@ -104,7 +104,7 @@ mod tests {
             .unwrap()
             .contains(&channel_id));
 
-        cache.update(&Event::ChannelDelete(Box::new(ChannelDelete(channel))));
+        cache.update(Event::ChannelDelete(Box::new(ChannelDelete(channel))));
         assert!(cache.channels.is_empty());
         assert!(cache.guild_channels.get(&guild_id).unwrap().is_empty());
     }
@@ -114,7 +114,7 @@ mod tests {
         let cache = DefaultInMemoryCache::new();
         let (guild_id, channel_id, channel) = test::guild_channel_text();
 
-        cache.update(&ChannelUpdate(channel));
+        cache.update(ChannelUpdate(channel));
         assert_eq!(1, cache.channels.len());
         assert!(cache
             .guild_channels

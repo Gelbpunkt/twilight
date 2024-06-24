@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{mem, ops::Deref};
 
 use serde::Serialize;
 use twilight_model::{
@@ -282,12 +282,12 @@ impl CacheableMember for CachedMember {
         self.mute
     }
 
-    fn update_with_member_update(&mut self, member_update: &MemberUpdate) {
+    fn update_with_member_update(&mut self, mut member_update: MemberUpdate) {
         self.avatar = member_update.avatar;
         self.deaf = member_update.deaf.or_else(|| self.deaf());
         self.mute = member_update.mute.or_else(|| self.mute());
-        self.nick.clone_from(&member_update.nick);
-        self.roles.clone_from(&member_update.roles);
+        self.nick = member_update.nick.take();
+        self.roles = mem::take(&mut member_update.roles);
         self.joined_at = member_update.joined_at;
         self.pending = member_update.pending;
         self.communication_disabled_until = member_update.communication_disabled_until;

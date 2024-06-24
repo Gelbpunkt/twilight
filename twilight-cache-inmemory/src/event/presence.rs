@@ -29,12 +29,12 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for PresenceUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::PRESENCE) {
             return;
         }
 
-        cache.cache_presence(self.guild_id, self.0.clone());
+        cache.cache_presence(self.guild_id, self.0);
     }
 }
 
@@ -68,7 +68,7 @@ mod tests {
             status: Status::Online,
             user: UserOrId::User(test::user(user_id)),
         });
-        cache.update(&Event::PresenceUpdate(Box::new(payload)));
+        cache.update(Event::PresenceUpdate(Box::new(payload)));
 
         assert_eq!(1, cache.presences.len());
         assert_eq!(1, cache.guild_presences.len());

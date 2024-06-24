@@ -402,7 +402,7 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
     }
 
     /// Update the cache with an event from the gateway.
-    pub fn update(&self, value: &impl UpdateCache<CacheModels>) {
+    pub fn update(&self, value: impl UpdateCache<CacheModels>) {
         value.update(self);
     }
 
@@ -937,7 +937,11 @@ pub trait UpdateCache<CacheModels: CacheableModels>: private::Sealed {
     /// Updates the cache based on data contained within an event.
     // Allow this for presentation purposes in documentation.
     #[allow(unused_variables, clippy::type_complexity)]
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {}
+    fn update(self, cache: &InMemoryCache<CacheModels>)
+    where
+        Self: Sized,
+    {
+    }
 }
 
 /// Iterator over a voice channel's list of voice states.
@@ -967,53 +971,53 @@ impl<'a, CachedVoiceState> Iterator for VoiceChannelStates<'a, CachedVoiceState>
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for Event {
     // clippy: using `.deref()` is cleaner
     #[allow(clippy::explicit_deref_methods)]
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         match self {
-            Event::ChannelCreate(v) => cache.update(v.deref()),
-            Event::ChannelDelete(v) => cache.update(v.deref()),
+            Event::ChannelCreate(v) => cache.update(*v),
+            Event::ChannelDelete(v) => cache.update(*v),
             Event::ChannelPinsUpdate(v) => cache.update(v),
-            Event::ChannelUpdate(v) => cache.update(v.deref()),
-            Event::GuildCreate(v) => cache.update(v.deref()),
+            Event::ChannelUpdate(v) => cache.update(*v),
+            Event::GuildCreate(v) => cache.update(*v),
             Event::GuildDelete(v) => cache.update(v),
             Event::GuildEmojisUpdate(v) => cache.update(v),
-            Event::GuildScheduledEventCreate(v) => cache.update(v.deref()),
-            Event::GuildScheduledEventDelete(v) => cache.update(v.deref()),
-            Event::GuildScheduledEventUpdate(v) => cache.update(v.deref()),
+            Event::GuildScheduledEventCreate(v) => cache.update(*v),
+            Event::GuildScheduledEventDelete(v) => cache.update(*v),
+            Event::GuildScheduledEventUpdate(v) => cache.update(*v),
             Event::GuildScheduledEventUserAdd(v) => cache.update(v),
             Event::GuildScheduledEventUserRemove(v) => cache.update(v),
             Event::GuildStickersUpdate(v) => cache.update(v),
-            Event::GuildUpdate(v) => cache.update(v.deref()),
-            Event::IntegrationCreate(v) => cache.update(v.deref()),
+            Event::GuildUpdate(v) => cache.update(*v),
+            Event::IntegrationCreate(v) => cache.update(*v),
             Event::IntegrationDelete(v) => cache.update(v),
-            Event::IntegrationUpdate(v) => cache.update(v.deref()),
-            Event::InteractionCreate(v) => cache.update(v.deref()),
-            Event::MemberAdd(v) => cache.update(v.deref()),
+            Event::IntegrationUpdate(v) => cache.update(*v),
+            Event::InteractionCreate(v) => cache.update(*v),
+            Event::MemberAdd(v) => cache.update(*v),
             Event::MemberChunk(v) => cache.update(v),
             Event::MemberRemove(v) => cache.update(v),
-            Event::MemberUpdate(v) => cache.update(v.deref()),
-            Event::MessageCreate(v) => cache.update(v.deref()),
+            Event::MemberUpdate(v) => cache.update(*v),
+            Event::MessageCreate(v) => cache.update(*v),
             Event::MessageDelete(v) => cache.update(v),
             Event::MessageDeleteBulk(v) => cache.update(v),
-            Event::MessageUpdate(v) => cache.update(v.deref()),
-            Event::PresenceUpdate(v) => cache.update(v.deref()),
-            Event::ReactionAdd(v) => cache.update(v.deref()),
-            Event::ReactionRemove(v) => cache.update(v.deref()),
+            Event::MessageUpdate(v) => cache.update(*v),
+            Event::PresenceUpdate(v) => cache.update(*v),
+            Event::ReactionAdd(v) => cache.update(*v),
+            Event::ReactionRemove(v) => cache.update(*v),
             Event::ReactionRemoveAll(v) => cache.update(v),
             Event::ReactionRemoveEmoji(v) => cache.update(v),
-            Event::Ready(v) => cache.update(v.deref()),
+            Event::Ready(v) => cache.update(*v),
             Event::RoleCreate(v) => cache.update(v),
             Event::RoleDelete(v) => cache.update(v),
             Event::RoleUpdate(v) => cache.update(v),
             Event::StageInstanceCreate(v) => cache.update(v),
             Event::StageInstanceDelete(v) => cache.update(v),
             Event::StageInstanceUpdate(v) => cache.update(v),
-            Event::ThreadCreate(v) => cache.update(v.deref()),
+            Event::ThreadCreate(v) => cache.update(*v),
             Event::ThreadDelete(v) => cache.update(v),
             Event::ThreadListSync(v) => cache.update(v),
-            Event::ThreadUpdate(v) => cache.update(v.deref()),
+            Event::ThreadUpdate(v) => cache.update(*v),
             Event::UnavailableGuild(v) => cache.update(v),
             Event::UserUpdate(v) => cache.update(v),
-            Event::VoiceStateUpdate(v) => cache.update(v.deref()),
+            Event::VoiceStateUpdate(v) => cache.update(*v),
 
             // Ignored events.
             Event::AutoModerationActionExecution(_)
@@ -1061,7 +1065,7 @@ mod tests {
     #[test]
     fn syntax_update() {
         let cache = DefaultInMemoryCache::new();
-        cache.update(&RoleDelete {
+        cache.update(RoleDelete {
             guild_id: Id::new(1),
             role_id: Id::new(1),
         });

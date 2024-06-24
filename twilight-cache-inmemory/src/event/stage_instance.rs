@@ -45,17 +45,17 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for StageInstanceCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::STAGE_INSTANCE) {
             return;
         }
 
-        cache.cache_stage_instance(self.guild_id, self.0.clone());
+        cache.cache_stage_instance(self.guild_id, self.0);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for StageInstanceDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::STAGE_INSTANCE) {
             return;
         }
@@ -65,12 +65,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for StageInstanceDel
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for StageInstanceUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::STAGE_INSTANCE) {
             return;
         }
 
-        cache.cache_stage_instance(self.guild_id, self.0.clone());
+        cache.cache_stage_instance(self.guild_id, self.0);
     }
 }
 
@@ -98,7 +98,7 @@ mod tests {
             topic: "topic".into(),
         };
 
-        cache.update(&StageInstanceCreate(stage_instance.clone()));
+        cache.update(StageInstanceCreate(stage_instance.clone()));
 
         {
             let cached_instances = cache
@@ -121,7 +121,7 @@ mod tests {
             ..stage_instance
         };
 
-        cache.update(&StageInstanceUpdate(new_stage_instance.clone()));
+        cache.update(StageInstanceUpdate(new_stage_instance.clone()));
 
         {
             let cached_instance = cache.stage_instance(stage_instance.id).unwrap();
@@ -129,7 +129,7 @@ mod tests {
             assert_eq!(new_stage_instance.topic, "a new topic");
         }
 
-        cache.update(&StageInstanceDelete(new_stage_instance));
+        cache.update(StageInstanceDelete(new_stage_instance));
 
         {
             let cached_instances = cache

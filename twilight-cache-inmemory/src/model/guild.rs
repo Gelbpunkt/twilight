@@ -1,4 +1,4 @@
-use std::slice::Iter;
+use std::{mem, slice::Iter};
 
 use serde::Serialize;
 use twilight_model::{
@@ -440,32 +440,30 @@ impl CacheableGuild for CachedGuild {
         self.unavailable = unavailable;
     }
 
-    fn update_with_guild_update(&mut self, guild_update: &GuildUpdate) {
+    fn update_with_guild_update(&mut self, mut guild_update: GuildUpdate) {
         self.afk_channel_id = guild_update.afk_channel_id;
         self.afk_timeout = guild_update.afk_timeout;
         self.banner = guild_update.banner;
         self.default_message_notifications = guild_update.default_message_notifications;
-        self.description.clone_from(&guild_update.description);
-        self.features.clone_from(&guild_update.features);
+        self.description = guild_update.description.take();
+        self.features = mem::take(&mut guild_update.features);
         self.icon = guild_update.icon;
         self.max_members = guild_update.max_members;
         self.max_presences = Some(guild_update.max_presences.unwrap_or(25000));
         self.mfa_level = guild_update.mfa_level;
-        self.name.clone_from(&guild_update.name);
+        self.name = mem::take(&mut guild_update.name);
         self.nsfw_level = guild_update.nsfw_level;
         self.owner = guild_update.owner;
         self.owner_id = guild_update.owner_id;
         self.permissions = guild_update.permissions;
-        self.preferred_locale
-            .clone_from(&guild_update.preferred_locale);
+        self.preferred_locale = mem::take(&mut guild_update.preferred_locale);
         self.premium_tier = guild_update.premium_tier;
-        self.premium_subscription_count
-            .replace(guild_update.premium_subscription_count.unwrap_or_default());
+        self.premium_subscription_count =
+            Some(guild_update.premium_subscription_count.unwrap_or_default());
         self.splash = guild_update.splash;
         self.system_channel_id = guild_update.system_channel_id;
         self.verification_level = guild_update.verification_level;
-        self.vanity_url_code
-            .clone_from(&guild_update.vanity_url_code);
+        self.vanity_url_code = guild_update.vanity_url_code.take();
         self.widget_channel_id = guild_update.widget_channel_id;
         self.widget_enabled = guild_update.widget_enabled;
     }

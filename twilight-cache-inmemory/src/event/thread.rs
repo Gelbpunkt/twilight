@@ -4,17 +4,17 @@ use twilight_model::gateway::payload::incoming::{
 };
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ThreadCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
 
-        cache.cache_channel(self.0.clone());
+        cache.cache_channel(self.0);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ThreadDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
@@ -24,21 +24,21 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ThreadDelete {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ThreadListSync {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
 
-        cache.cache_channels(self.threads.clone());
+        cache.cache_channels(self.threads);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for ThreadUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::CHANNEL) {
             return;
         }
 
-        cache.cache_channel(self.0.clone());
+        cache.cache_channel(self.0);
     }
 }

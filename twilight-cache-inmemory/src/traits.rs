@@ -112,7 +112,7 @@ pub trait CacheableMember:
     fn mute(&self) -> Option<bool>;
 
     /// Update the cached data with a [`MemberUpdate`] event.
-    fn update_with_member_update(&mut self, member_update: &MemberUpdate);
+    fn update_with_member_update(&mut self, member_update: MemberUpdate);
 }
 
 /// Trait for a generic cached representation of a [`Role`].
@@ -210,7 +210,7 @@ pub trait CacheableGuild: From<Guild> + PartialEq<Guild> + PartialEq<Self> + Clo
 
     /// Update the cached data with a [`GuildUpdate`] event. Fields containing other
     /// cached structures such as channels are cleared prior.
-    fn update_with_guild_update(&mut self, guild_update: &GuildUpdate);
+    fn update_with_guild_update(&mut self, guild_update: GuildUpdate);
 
     /// Increase the guild member count.
     fn increase_member_count(&mut self, amount: u64);

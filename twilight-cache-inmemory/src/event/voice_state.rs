@@ -73,15 +73,18 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for VoiceStateUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::VOICE_STATE) {
             return;
         }
 
-        cache.cache_voice_state(self.0.clone());
+        let guild_id = self.0.guild_id;
+        let member = self.0.member.clone();
 
-        if let (Some(guild_id), Some(member)) = (self.0.guild_id, &self.0.member) {
-            cache.cache_member(guild_id, member.clone());
+        cache.cache_voice_state(self.0);
+
+        if let (Some(guild_id), Some(member)) = (guild_id, member) {
+            cache.cache_member(guild_id, member);
         }
     }
 }
@@ -258,7 +261,7 @@ mod tests {
             .resource_types(ResourceType::VOICE_STATE)
             .build();
 
-        cache.update(&VoiceStateUpdate(VoiceState {
+        cache.update(VoiceStateUpdate(VoiceState {
             channel_id: None,
             deaf: false,
             guild_id: Some(Id::new(1)),
@@ -335,7 +338,7 @@ mod tests {
             ),
         });
 
-        cache.update(&mutation);
+        cache.update(mutation);
 
         assert_eq!(cache.members.len(), 1);
         {
@@ -360,7 +363,7 @@ mod tests {
 
         let cache = DefaultInMemoryCache::new();
         let voice_state = test::voice_state(GUILD_ID, Some(CHANNEL_ID), USER_ID);
-        cache.update(&VoiceStateUpdate(voice_state.clone()));
+        cache.update(VoiceStateUpdate(voice_state.clone()));
 
         let cached = CachedVoiceState::from((CHANNEL_ID, GUILD_ID, voice_state));
         let in_cache = cache.voice_state(USER_ID, GUILD_ID).unwrap();

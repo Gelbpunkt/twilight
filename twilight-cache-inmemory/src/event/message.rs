@@ -5,17 +5,17 @@ use twilight_model::gateway::payload::incoming::{
 };
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MessageCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(mut self, cache: &InMemoryCache<CacheModels>) {
         if cache.wants(ResourceType::USER) {
             cache.cache_user(Cow::Borrowed(&self.author), self.guild_id);
         }
 
         if let (Some(member), Some(guild_id), true) = (
-            &self.member,
+            self.member.take(),
             self.guild_id,
             cache.wants(ResourceType::MEMBER),
         ) {
-            cache.cache_borrowed_partial_member(guild_id, member, self.author.id);
+            cache.cache_partial_member(guild_id, member, self.author.id);
         }
 
         if !cache.wants(ResourceType::MESSAGE) {
@@ -37,12 +37,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MessageCreate {
         channel_messages.push_front(self.0.id);
         cache
             .messages
-            .insert(self.0.id, CacheModels::Message::from(self.0.clone()));
+            .insert(self.0.id, CacheModels::Message::from(self.0));
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MessageDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::MESSAGE) {
             return;
         }
@@ -58,7 +58,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MessageDelete {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MessageDeleteBulk {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::MESSAGE) {
             return;
         }
@@ -79,17 +79,17 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MessageDeleteBul
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MessageUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if cache.wants(ResourceType::USER) {
             cache.cache_user(Cow::Borrowed(&self.author), self.guild_id);
         }
 
         if let (Some(member), Some(guild_id), true) = (
-            &self.member,
+            self.member.clone(),
             self.guild_id,
             cache.wants(ResourceType::MEMBER),
         ) {
-            cache.cache_borrowed_partial_member(guild_id, member, self.author.id);
+            cache.cache_partial_member(guild_id, member, self.author.id);
         }
 
         if !cache.wants(ResourceType::MESSAGE) {
@@ -213,9 +213,9 @@ mod tests {
             webhook_id: None,
         };
 
-        cache.update(&MessageCreate(msg.clone()));
+        cache.update(MessageCreate(msg.clone()));
         msg.id = Id::new(5);
-        cache.update(&MessageCreate(msg));
+        cache.update(MessageCreate(msg));
 
         {
             let entry = cache.user_guilds(Id::new(3)).unwrap();

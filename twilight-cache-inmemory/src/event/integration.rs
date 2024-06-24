@@ -37,7 +37,7 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for IntegrationCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::INTEGRATION) {
             return;
         }
@@ -47,14 +47,14 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for IntegrationCreat
                 &cache.integrations,
                 guild_id,
                 (guild_id, self.id),
-                CacheModels::GuildIntegration::from(self.0.clone()),
+                CacheModels::GuildIntegration::from(self.0),
             );
         }
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for IntegrationDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::INTEGRATION) {
             return;
         }
@@ -64,13 +64,13 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for IntegrationDelet
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for IntegrationUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::INTEGRATION) {
             return;
         }
 
         if let Some(guild_id) = self.guild_id {
-            cache.cache_integration(guild_id, self.0.clone());
+            cache.cache_integration(guild_id, self.0);
         }
     }
 }

@@ -46,16 +46,16 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
             .insert(member_id);
     }
 
-    pub(crate) fn cache_borrowed_partial_member(
+    pub(crate) fn cache_partial_member(
         &self,
         guild_id: Id<GuildMarker>,
-        member: &PartialMember,
+        member: PartialMember,
         user_id: Id<UserMarker>,
     ) {
         let id = (guild_id, user_id);
 
         if let Some(m) = self.members.get(&id) {
-            if &*m == member {
+            if *m == member {
                 return;
             }
         }
@@ -65,20 +65,20 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
             .or_default()
             .insert(user_id);
 
-        let cached = CacheModels::Member::from((user_id, member.clone()));
+        let cached = CacheModels::Member::from((user_id, member));
         self.members.insert(id, cached);
     }
 
-    pub(crate) fn cache_borrowed_interaction_member(
+    pub(crate) fn cache_interaction_member(
         &self,
         guild_id: Id<GuildMarker>,
-        member: &InteractionMember,
+        member: InteractionMember,
         user_id: Id<UserMarker>,
     ) {
         let id = (guild_id, user_id);
 
         let (avatar, deaf, mute) = match self.members.get(&id) {
-            Some(m) if &*m == member => return,
+            Some(m) if *m == member => return,
             Some(m) => (m.avatar(), m.deaf(), m.mute()),
             None => (None, None, None),
         };
@@ -91,7 +91,7 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
         let cached = CacheModels::Member::from(ComputedInteractionMember {
             avatar,
             deaf,
-            interaction_member: member.clone(),
+            interaction_member: member,
             mute,
             user_id,
         });
@@ -101,7 +101,7 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberAdd {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if cache.wants(ResourceType::GUILD) {
             if let Some(mut guild) = cache.guilds.get_mut(&self.guild_id) {
                 guild.increase_member_count(1);
@@ -112,12 +112,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberAdd {
             return;
         }
 
-        cache.cache_member(self.guild_id, self.member.clone());
+        cache.cache_member(self.guild_id, self.member);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberChunk {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::MEMBER) {
             return;
         }
@@ -126,12 +126,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberChunk {
             return;
         }
 
-        cache.cache_members(self.guild_id, self.members.clone());
+        cache.cache_members(self.guild_id, self.members);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberRemove {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if cache.wants(ResourceType::GUILD) {
             if let Some(mut guild) = cache.guilds.get_mut(&self.guild_id) {
                 guild.decrease_member_count(1);
@@ -165,7 +165,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberRemove {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::MEMBER) {
             return;
         }
@@ -265,7 +265,7 @@ mod tests {
 
         // Test that removing a user from a guild will cause the ID to be
         // removed from the set, leaving the other ID.
-        cache.update(&MemberRemove {
+        cache.update(MemberRemove {
             guild_id: Id::new(3),
             user: test::user(user_id),
         });
@@ -278,7 +278,7 @@ mod tests {
 
         // Test that removing the user from its last guild removes the user's
         // entry.
-        cache.update(&MemberRemove {
+        cache.update(MemberRemove {
             guild_id: Id::new(1),
             user: test::user(user_id),
         });

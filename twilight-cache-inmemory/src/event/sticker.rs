@@ -70,12 +70,12 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for GuildStickersUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::STICKER) {
             return;
         }
 
-        cache.cache_stickers(self.guild_id, self.stickers.clone());
+        cache.cache_stickers(self.guild_id, self.stickers);
     }
 }
 

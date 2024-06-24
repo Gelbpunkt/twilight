@@ -108,7 +108,7 @@ pub fn cache_with_message_and_reactions() -> DefaultInMemoryCache {
         webhook_id: None,
     };
 
-    cache.update(&MessageCreate(msg));
+    cache.update(MessageCreate(msg));
 
     let mut reaction = ReactionAdd(GatewayReaction {
         burst: false,
@@ -155,7 +155,7 @@ pub fn cache_with_message_and_reactions() -> DefaultInMemoryCache {
         user_id: Id::new(3),
     });
 
-    cache.update(&reaction);
+    cache.update(reaction.clone());
 
     let user_5_input = b"ef678abdee09d8dfb14e83381983d5e4";
     let user_5_avatar = ImageHash::parse(user_5_input).unwrap();
@@ -194,13 +194,13 @@ pub fn cache_with_message_and_reactions() -> DefaultInMemoryCache {
     });
     reaction.user_id = Id::new(5);
 
-    cache.update(&reaction);
+    cache.update(reaction.clone());
 
     reaction.emoji = EmojiReactionType::Unicode {
         name: "🗺️".to_owned(),
     };
 
-    cache.update(&reaction);
+    cache.update(reaction.clone());
 
     reaction.emoji = EmojiReactionType::Custom {
         animated: true,
@@ -208,7 +208,7 @@ pub fn cache_with_message_and_reactions() -> DefaultInMemoryCache {
         name: Some("custom".to_owned()),
     };
 
-    cache.update(&reaction);
+    cache.update(reaction);
 
     cache
 }

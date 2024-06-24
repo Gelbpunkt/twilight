@@ -45,17 +45,17 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for RoleCreate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::ROLE) {
             return;
         }
 
-        cache.cache_role(self.guild_id, self.role.clone());
+        cache.cache_role(self.guild_id, self.role);
     }
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for RoleDelete {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::ROLE) {
             return;
         }
@@ -65,12 +65,12 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for RoleDelete {
 }
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for RoleUpdate {
-    fn update(&self, cache: &InMemoryCache<CacheModels>) {
+    fn update(self, cache: &InMemoryCache<CacheModels>) {
         if !cache.wants(ResourceType::ROLE) {
             return;
         }
 
-        cache.cache_role(self.guild_id, self.role.clone());
+        cache.cache_role(self.guild_id, self.role);
     }
 }
 
@@ -83,7 +83,7 @@ mod tests {
     fn insert_role_on_event() {
         let cache = DefaultInMemoryCache::new();
 
-        cache.update(&RoleCreate {
+        cache.update(RoleCreate {
             guild_id: Id::new(1),
             role: test::role(Id::new(2)),
         });
