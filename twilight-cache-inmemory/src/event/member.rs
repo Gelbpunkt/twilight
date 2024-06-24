@@ -4,7 +4,7 @@ use crate::{
     config::ResourceType,
     model::member::ComputedInteractionMember,
     traits::{CacheableGuild, CacheableMember},
-    CacheableModels, InMemoryCache, UpdateCache,
+    CacheableCurrentUser, CacheableModels, InMemoryCache, UpdateCache,
 };
 use twilight_model::{
     application::interaction::InteractionMember,
@@ -30,12 +30,6 @@ impl<CacheModels: CacheableModels> InMemoryCache<CacheModels> {
     pub(crate) fn cache_member(&self, guild_id: Id<GuildMarker>, member: Member) {
         let member_id = member.user.id;
         let id = (guild_id, member_id);
-
-        if let Some(m) = self.members.get(&id) {
-            if *m == member {
-                return;
-            }
-        }
 
         self.cache_user(Cow::Borrowed(&member.user), Some(guild_id));
         let cached = CacheModels::Member::from(member);
@@ -108,7 +102,15 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberAdd {
             }
         }
 
-        if !cache.wants(ResourceType::MEMBER) {
+        if !cache.wants(ResourceType::MEMBER) && !cache.wants(ResourceType::MEMBER_CURRENT) {
+            return;
+        }
+
+        if !cache.wants(ResourceType::MEMBER)
+            && cache
+                .current_user()
+                .map_or(true, |user| user.id() != self.member.user.id)
+        {
             return;
         }
 
@@ -118,7 +120,7 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberAdd {
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberChunk {
     fn update(self, cache: &InMemoryCache<CacheModels>) {
-        if !cache.wants(ResourceType::MEMBER) {
+        if !cache.wants(ResourceType::MEMBER) && !cache.wants(ResourceType::MEMBER_CURRENT) {
             return;
         }
 
@@ -126,7 +128,20 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberChunk {
             return;
         }
 
-        cache.cache_members(self.guild_id, self.members);
+        if !cache.wants(ResourceType::MEMBER) {
+            if let Some(current_user) = cache.current_user() {
+                let current_member = self
+                    .members
+                    .into_iter()
+                    .find(|member| member.user.id == current_user.id());
+
+                if let Some(member) = current_member {
+                    cache.cache_member(self.guild_id, member);
+                }
+            }
+        } else {
+            cache.cache_members(self.guild_id, self.members);
+        }
     }
 }
 
@@ -138,7 +153,15 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberRemove {
             }
         }
 
-        if !cache.wants(ResourceType::MEMBER) {
+        if !cache.wants(ResourceType::MEMBER) && !cache.wants(ResourceType::MEMBER_CURRENT) {
+            return;
+        }
+
+        if !cache.wants(ResourceType::MEMBER)
+            && cache
+                .current_user()
+                .map_or(true, |user| user.id() != self.user.id)
+        {
             return;
         }
 
@@ -166,7 +189,15 @@ impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberRemove {
 
 impl<CacheModels: CacheableModels> UpdateCache<CacheModels> for MemberUpdate {
     fn update(self, cache: &InMemoryCache<CacheModels>) {
-        if !cache.wants(ResourceType::MEMBER) {
+        if !cache.wants(ResourceType::MEMBER) && !cache.wants(ResourceType::MEMBER_CURRENT) {
+            return;
+        }
+
+        if !cache.wants(ResourceType::MEMBER)
+            && cache
+                .current_user()
+                .map_or(true, |user| user.id() != self.user.id)
+        {
             return;
         }
 
