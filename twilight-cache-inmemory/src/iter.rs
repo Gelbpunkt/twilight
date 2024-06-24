@@ -13,8 +13,11 @@
 //! dereferences to the value.
 
 use crate::{CacheableModels, GuildResource, InMemoryCache};
-use dashmap::{iter::Iter, mapref::multiple::RefMulti};
-use std::{hash::Hash, ops::Deref};
+use dashmap::{iter::Iter, iter_set::Iter as IterSet, mapref::multiple::RefMulti, DashMap};
+use std::{
+    hash::{Hash, RandomState},
+    ops::Deref,
+};
 use twilight_model::id::{
     marker::{
         ChannelMarker, EmojiMarker, GuildMarker, IntegrationMarker, MessageMarker, RoleMarker,
@@ -151,6 +154,11 @@ impl<'a, CacheModels: CacheableModels> InMemoryCacheIter<'a, CacheModels> {
         ResourceIter::new(self.0.guilds.iter())
     }
 
+    /// Create an iterator over the unavailable guilds in the cache.
+    pub fn unavailable_guilds(&self) -> KeyIter<'a, Id<GuildMarker>> {
+        KeyIter::new(self.0.unavailable_guilds.iter())
+    }
+
     /// Create an iterator over the integrations in the cache.
     #[allow(clippy::type_complexity)]
     pub fn integrations(
@@ -211,6 +219,30 @@ impl<'a, CacheModels: CacheableModels> InMemoryCacheIter<'a, CacheModels> {
         &self,
     ) -> ResourceIter<'a, (Id<GuildMarker>, Id<UserMarker>), CacheModels::VoiceState> {
         ResourceIter::new(self.0.voice_states.iter())
+    }
+}
+
+/// Generic iterator over keys of a resource.
+///
+/// The iteration order is arbitary.
+pub struct KeyIter<'a, K> {
+    iter: IterSet<'a, K, RandomState, DashMap<K, (), RandomState>>,
+}
+
+impl<'a, K> KeyIter<'a, K> {
+    /// Create a new iterator over a resource.
+    pub(super) const fn new(
+        iter: IterSet<'a, K, RandomState, DashMap<K, (), RandomState>>,
+    ) -> Self {
+        Self { iter }
+    }
+}
+
+impl<'a, K: Eq + Hash + Copy> Iterator for KeyIter<'a, K> {
+    type Item = K;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|i| *i.key())
     }
 }
 
